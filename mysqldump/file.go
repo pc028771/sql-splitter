@@ -62,14 +62,14 @@ func NewOutput(table string, idx int, fq FileQueries, ddl []string, dml dml) *Ou
 		// fmt.Println(v)
 	}
 
-	for _, q := range fq.Tail {
+	for _, q := range dml.Tail {
 		v := string(q)
 		o.Size += len(q)
 		o.Tail = append(o.Tail, v)
 		// fmt.Println(v)
 	}
 
-	for _, q := range dml.Tail {
+	for _, q := range fq.Tail {
 		v := string(q)
 		o.Size += len(q)
 		o.Tail = append(o.Tail, v)
@@ -93,7 +93,7 @@ func (o *Output) AddValue(value *string) error {
 }
 
 func (o *Output) WriteToFile() error {
-	fmt.Println("Writting to", o.Filename)
+	// fmt.Println("Writting to", o.Filename)
 	f, err := os.Create(o.Filename)
 	if err != nil {
 		return err

@@ -58,11 +58,14 @@ func NewTable(name string, query string) *Table {
 }
 
 func (t *Table) AddQuery(query string) error {
-
 	if len(query) == 14 && strings.HasPrefix(query, "UNLOCK TABLES") {
 		t.AddDML(query)
 		t.IsDDL = true
 		return ErrEndOfTable
+	}
+
+	if t.IsSkip {
+		return nil
 	}
 
 	if strings.HasPrefix(query, "LOCK TABLES") {
@@ -85,6 +88,10 @@ func (t *Table) AddDDL(query string) *Table {
 }
 
 func (t *Table) AddDML(query string) {
+	if t.IsSkip {
+		return
+	}
+
 	if strings.HasPrefix(query, "INSERT") {
 		t.addValue(query)
 		return
@@ -153,12 +160,20 @@ func (t *Table) AppendToFile(index int) (int, error) {
 	defer f.Close()
 
 	fileStat, _ := f.Stat()
+	fileSize := int(fileStat.Size())
+	isNewFile := fileSize == 0
 
-	if fileStat.Size()+int64(t.Size) > MERGE_FILE_SIZE_LIMIT {
-		return t.AppendToFile(index + 1)
+	if isNewFile {
+		fileSize += t.FQ.Size
 	}
 
-	isNewFile := fileStat.Size() == 0
+	if fileSize+t.Size > MERGE_FILE_SIZE_LIMIT {
+		for _, q := range t.FQ.Tail {
+			fmt.Println(q)
+			f.WriteString(q + "\n")
+		}
+		return t.AppendToFile(index + 1)
+	}
 
 	if isNewFile {
 		for _, q := range t.FQ.Head {
@@ -185,12 +200,6 @@ func (t *Table) AppendToFile(index int) (int, error) {
 		f.WriteString(q + "\n")
 	}
 
-	if isNewFile {
-		for _, q := range t.FQ.Tail {
-			f.WriteString(q + "\n")
-		}
-	}
-
-	fmt.Println("Writting to", filename)
+	// fmt.Println("Writting to", filename)
 	return index, nil
 }
