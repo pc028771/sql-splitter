@@ -27,10 +27,10 @@ type Table struct {
 	Name   string
 	DDL    []string
 	DML    dml
-	Values []string
+	Values []*string
 	Size   int
 	IsDDL  bool
-	FQ     FileQueries
+	FQ     *FileQueries
 	Files  []*Output
 	IsSkip bool
 }
@@ -57,8 +57,8 @@ func NewTable(name string, query string) *Table {
 	return &t
 }
 
-func (t *Table) AddQuery(query string) error {
-	if len(query) == 14 && strings.HasPrefix(query, "UNLOCK TABLES") {
+func (t *Table) AddQuery(query *string) error {
+	if len(*query) == 14 && strings.HasPrefix(*query, "UNLOCK TABLES") {
 		t.AddDML(query)
 		t.IsDDL = true
 		return ErrEndOfTable
@@ -68,12 +68,12 @@ func (t *Table) AddQuery(query string) error {
 		return nil
 	}
 
-	if strings.HasPrefix(query, "LOCK TABLES") {
+	if strings.HasPrefix(*query, "LOCK TABLES") {
 		t.IsDDL = false
 	}
 
 	if t.IsDDL {
-		t.AddDDL(query)
+		t.AddDDL(*query)
 	} else {
 		t.AddDML(query)
 	}
@@ -87,30 +87,30 @@ func (t *Table) AddDDL(query string) *Table {
 	return t
 }
 
-func (t *Table) AddDML(query string) {
+func (t *Table) AddDML(query *string) {
 	if t.IsSkip {
 		return
 	}
 
-	if strings.HasPrefix(query, "INSERT") {
+	if strings.HasPrefix(*query, "INSERT") {
 		t.addValue(query)
 		return
 	}
 
-	t.DML.Size += len(query)
+	t.DML.Size += len(*query)
 	if len(t.Values) == 0 {
-		t.DML.Head = append(t.DML.Head, query)
+		t.DML.Head = append(t.DML.Head, *query)
 	} else {
-		t.DML.Tail = append(t.DML.Tail, query)
+		t.DML.Tail = append(t.DML.Tail, *query)
 	}
 }
 
-func (t *Table) addValue(value string) {
-	t.Size += len(value)
+func (t *Table) addValue(value *string) {
+	t.Size += len(*value)
 	t.Values = append(t.Values, value)
 }
 
-func (t *Table) Save(fq FileQueries, index int) (mergeIndex int, err error) {
+func (t *Table) Save(fq *FileQueries, index int) (mergeIndex int, err error) {
 	t.FQ = fq
 
 	if t.Size+fq.Size > FILE_SIZE_LIMIT {
@@ -127,7 +127,7 @@ func (t *Table) SplitToFiles() error {
 	o := NewOutput(t.Name, fileIndex, t.FQ, t.DDL, t.DML)
 
 	for _, value := range t.Values {
-		err := o.AddValue(&value)
+		err := o.AddValue(value)
 
 		if err == nil {
 			continue
@@ -143,7 +143,7 @@ func (t *Table) SplitToFiles() error {
 		t.Files = append(t.Files, o)
 		fileIndex++
 		o = NewOutput(t.Name, fileIndex, t.FQ, nil, t.DML)
-		o.AddValue(&value)
+		o.AddValue(value)
 	}
 
 	err := o.WriteToFile()
@@ -169,15 +169,14 @@ func (t *Table) AppendToFile(index int) (int, error) {
 
 	if fileSize+t.Size > MERGE_FILE_SIZE_LIMIT {
 		for _, q := range t.FQ.Tail {
-			fmt.Println(q)
-			f.WriteString(q + "\n")
+			f.WriteString(*q + "\n")
 		}
 		return t.AppendToFile(index + 1)
 	}
 
 	if isNewFile {
 		for _, q := range t.FQ.Head {
-			f.WriteString(q + "\n")
+			f.WriteString(*q + "\n")
 		}
 	}
 
@@ -190,9 +189,9 @@ func (t *Table) AppendToFile(index int) (int, error) {
 	}
 
 	for _, q := range t.Values {
-		q = strings.ReplaceAll(q, "www.herenow.city", "herenow.novize.com.tw")
-		q = strings.ReplaceAll(q, "stg.herenow.city", "herenow.novize.com.tw")
-		f.WriteString(q)
+		*q = strings.ReplaceAll(*q, "www.herenow.city", "herenow.novize.com.tw")
+		*q = strings.ReplaceAll(*q, "stg.herenow.city", "herenow.novize.com.tw")
+		f.WriteString(*q)
 		f.WriteString("\n")
 	}
 

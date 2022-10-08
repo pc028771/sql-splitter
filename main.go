@@ -59,11 +59,11 @@ func splitFile(filename string) {
 		}
 
 		if currentTable == "" {
-			fq.AddQuery(line)
+			fq.AddQuery(&line)
 			continue
 		}
 
-		err = tables[currentTable].AddQuery(line)
+		err = tables[currentTable].AddQuery(&line)
 		if errors.Is(err, mysqldump.ErrEndOfTable) {
 			currentTable = ""
 		}
@@ -91,7 +91,7 @@ func splitFile(filename string) {
 	// DebugPrint(sorts)
 	mergeIndex := 0
 	for _, t := range tables {
-		mergeIndex, err = t.Save(fq, mergeIndex)
+		mergeIndex, err = t.Save(&fq, mergeIndex)
 		if err != nil {
 			panic(err)
 		}

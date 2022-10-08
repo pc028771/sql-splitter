@@ -9,14 +9,14 @@ import (
 
 type FileQueries struct {
 	Index        int
-	Head         []string
-	Tail         []string
+	Head         []*string
+	Tail         []*string
 	Size         int
 	IsAddingHead bool
 }
 
-func (fq *FileQueries) AddQuery(query string) {
-	fq.Size += len(query)
+func (fq *FileQueries) AddQuery(query *string) {
+	fq.Size += len(*query)
 
 	if fq.IsAddingHead {
 		fq.Head = append(fq.Head, query)
@@ -35,23 +35,21 @@ type Output struct {
 	Values   []string
 }
 
-func NewOutput(table string, idx int, fq FileQueries, ddl []string, dml dml) *Output {
+func NewOutput(table string, idx int, fq *FileQueries, ddl []string, dml dml) *Output {
 	o := Output{
 		Filename: fmt.Sprint("output/", table, "_", idx, ".sql"),
 		Size:     0,
 	}
 
-	for _, q := range fq.Head {
-		v := string(q)
-		o.Size += len(q)
-		o.Head = append(o.Head, v)
+	for _, q := range (*fq).Head {
+		o.Size += len(*q)
+		o.Head = append(o.Head, *q)
 		// fmt.Println(v)
 	}
 
 	for _, q := range ddl {
-		v := string(q)
 		o.Size += len(q)
-		o.Head = append(o.Head, v)
+		o.Head = append(o.Head, q)
 		// fmt.Println(v)
 	}
 
@@ -69,10 +67,9 @@ func NewOutput(table string, idx int, fq FileQueries, ddl []string, dml dml) *Ou
 		// fmt.Println(v)
 	}
 
-	for _, q := range fq.Tail {
-		v := string(q)
-		o.Size += len(q)
-		o.Tail = append(o.Tail, v)
+	for _, q := range (*fq).Tail {
+		o.Size += len(*q)
+		o.Tail = append(o.Tail, *q)
 		// fmt.Println(v)
 	}
 
