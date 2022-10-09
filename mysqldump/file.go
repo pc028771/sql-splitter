@@ -32,7 +32,7 @@ type Output struct {
 	Head     []string
 	Tail     []string
 	Size     int
-	Values   []string
+	Values   []*string
 }
 
 func NewOutput(table string, idx int, fq *FileQueries, ddl []string, dml dml) *Output {
@@ -44,48 +44,43 @@ func NewOutput(table string, idx int, fq *FileQueries, ddl []string, dml dml) *O
 	for _, q := range (*fq).Head {
 		o.Size += len(*q)
 		o.Head = append(o.Head, *q)
-		// fmt.Println(v)
 	}
 
 	for _, q := range ddl {
 		o.Size += len(q)
 		o.Head = append(o.Head, q)
-		// fmt.Println(v)
 	}
 
 	for _, q := range dml.Head {
 		v := string(q)
 		o.Size += len(q)
 		o.Head = append(o.Head, v)
-		// fmt.Println(v)
 	}
 
 	for _, q := range dml.Tail {
 		v := string(q)
 		o.Size += len(q)
 		o.Tail = append(o.Tail, v)
-		// fmt.Println(v)
 	}
 
 	for _, q := range (*fq).Tail {
 		o.Size += len(*q)
 		o.Tail = append(o.Tail, *q)
-		// fmt.Println(v)
 	}
 
 	return &o
 }
 
 func (o *Output) AddValue(value *string) error {
-	str := strings.ReplaceAll(*value, "www.herenow.city", "herenow.novize.com.tw")
-	str = strings.ReplaceAll(str, "stg.herenow.city", "herenow.novize.com.tw")
+	*value = strings.ReplaceAll(*value, "www.herenow.city", "herenow.novize.com.tw")
+	*value = strings.ReplaceAll(*value, "stg.herenow.city", "herenow.novize.com.tw")
 
-	if o.Size+len(str) > FILE_SIZE_LIMIT {
+	if o.Size+len(*value) > FILE_SIZE_LIMIT {
 		return ErrSizeLimitIsReached
 	}
 
-	o.Values = append(o.Values, str)
-	o.Size += len(str)
+	o.Values = append(o.Values, value)
+	o.Size += len(*value)
 	return nil
 }
 
@@ -103,7 +98,7 @@ func (o *Output) WriteToFile() error {
 	}
 
 	for _, str := range o.Values {
-		f.WriteString(str)
+		f.WriteString(*str)
 		f.WriteString("\n")
 	}
 
