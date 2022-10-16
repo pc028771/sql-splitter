@@ -72,8 +72,9 @@ func NewOutput(table string, idx int, fq *FileQueries, ddl []string, dml dml) *O
 }
 
 func (o *Output) AddValue(value *string) error {
-	*value = strings.ReplaceAll(*value, "www.herenow.city", "herenow.novize.com.tw")
-	*value = strings.ReplaceAll(*value, "stg.herenow.city", "herenow.novize.com.tw")
+	replacer := strings.NewReplacer("/stg.herenow.city/", targetDomain, "/cdn.herenow.city/", targetDomain)
+	// For migrate from stg.herenow.city to HereNow - Novize Production
+	*value = replacer.Replace(*value)
 
 	if o.Size+len(*value) > FILE_SIZE_LIMIT {
 		return ErrSizeLimitIsReached
@@ -85,7 +86,6 @@ func (o *Output) AddValue(value *string) error {
 }
 
 func (o *Output) WriteToFile() error {
-	// fmt.Println("Writting to", o.Filename)
 	f, err := os.Create(o.Filename)
 	if err != nil {
 		return err

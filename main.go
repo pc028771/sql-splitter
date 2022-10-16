@@ -14,7 +14,6 @@ import (
 )
 
 func splitFile(filename string) {
-
 	sqlFile, err := os.Open(filename)
 	if nil != err {
 		panic(err)
@@ -100,6 +99,10 @@ func splitFile(filename string) {
 
 func main() {
 	filename := "hn-stage.sql"
+	if len(os.Args[1:]) > 0 {
+		filename = os.Args[1:][0]
+	}
+
 	splitFile(filename)
 }
 

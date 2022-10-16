@@ -13,6 +13,9 @@ import (
 
 const FILE_SIZE_LIMIT = 20 * 1024 * 1024
 const MERGE_FILE_SIZE_LIMIT = 20 * 1024 * 1024
+const targetDomain = "www.herenow.city"
+
+// const targetDomain = "herenow.novize.com.tw"
 
 var AllowedSiteIds = []int{2, 6, 9, 10}
 var ErrEndOfTable = errors.New("EndOfTable")
@@ -188,10 +191,10 @@ func (t *Table) AppendToFile(index int) (int, error) {
 		f.WriteString(q + "\n")
 	}
 
+	replacer := strings.NewReplacer("/stg.herenow.city/", targetDomain, "/cdn.herenow.city/", targetDomain)
+
 	for _, q := range t.Values {
-		*q = strings.ReplaceAll(*q, "www.herenow.city", "herenow.novize.com.tw")
-		*q = strings.ReplaceAll(*q, "stg.herenow.city", "herenow.novize.com.tw")
-		f.WriteString(*q)
+		f.WriteString(replacer.Replace(*q))
 		f.WriteString("\n")
 	}
 
